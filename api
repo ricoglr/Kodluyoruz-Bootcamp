@@ -1,0 +1,128 @@
+**"Arkadaşlar, bugün React Native'de API çağrıları ve bu verilerle nasıl çalışacağımızı öğreneceğiz. Hadi adım adım ilerleyelim."**
+
+----------
+
+### **1. State ve Hook’ların Tanımı**
+
+"Öncelikle bir uygulamada verileri nasıl yönettiğimizi konuşalım. React Native'de, bir bileşenin içindeki verileri saklamak ve güncellemek için **state** ve **hook’lar** kullanıyoruz. Burada iki önemli hook var: `useState` ve `useEffect`. 
+
+**`useState`:**  
+Bir bileşenin içinde bir veri saklamak ve bu veriyi değiştirmek istiyorsak `useState` kullanırız.
+
+```typescript
+const [stateDeğeri, stateGüncellemeFonksiyonu] = useState(initialValue);
+```
+-   `stateDeğeri`: Güncel durumumuz. Mesela, API’den çektiğimiz veriler ilk olarak  burada saklanacak.
+-   `stateGüncellemeFonksiyonu`: Bu veriyi değiştirmek için kullandığımız fonksiyon.
+- `initialValue` ): State'in başlangıç değeri. `useState` çağrıldığında state bu değerle başlar.
+
+**`useEffect` Nedir?**  
+Bu hook ise, bir bileşen yüklendiğinde ya da belirli bir durum değiştiğinde çalışmasını istediğimiz kodları yazmamıza yarar. Az sonra kodu kendimiz yazdığında daha iyi anlayacaksın. Kısaca gösterimi şu şekilde:
+
+```typescript
+useEffect(() => {
+  console.log('Bileşen yüklendi!');
+}, []);
+```
+
+**Bileşen ilk yüklendiğinde veri çekmek:**
+-   Kullanıcı listesi, ürün bilgisi, vb.
+-   Köşeli parantez **boş (`[]`)** olduğunda bu hook'un sadece bir kez çalışacağını gösteriyor.
+- Örneğin bir props'a veya state'e bağlı işlem yapmasını isteseydik mesela searchBar o zaman kullanımı bu şekilde olacaktı:
+```typescript
+useEffect(() => { fetchFilteredUsers(searchTerm);}, [searchTerm]);
+```
+searchTerm değiştiğinde yeni sonuçları getir
+
+----------
+
+### **2. API’den Veri Çekme**
+
+"Şimdi gelelim API'den veri çekmeye. Bunun için genellikle `axios` kütüphanesini kullanıyoruz.
+
+```bash
+npm install axios
+```
+
+Sonra API çağrısını yapıyoruz. Ben burada hazırlık olması açısından mockAPI kullandım oradan veri çekeceğiz. Şöyle yapıyoruz:
+
+```typescript
+axios.get('API')
+  .then(response => {
+    console.log(response.data); // API’den gelen veriler burada
+  })
+  .catch(error => {
+    console.error('Bir hata oluştu:', error.message);
+  });
+```
+
+-   **`axios.get`**: Bu metodla API’den veri çekiyoruz.
+-   **`response.data`**: API’den gelen verileri tutan kısım.
+-   **`catch`**: Bir hata oluşursa burada yakalıyoruz."
+
+----------
+
+### **3. Veriyi State'e Kaydetmek**
+
+"Peki, bu veriyi sadece konsola yazdırmak yerine uygulamada göstermek istiyorsak ne yapacağız? İşte burada `useState` devreye giriyor. Gelen veriyi state’e kaydediyoruz:
+
+```typescript
+useEffect(() => {
+    // Axios ile API'ye GET isteğini gönderiyoruz
+    axios.get('https://jsonplaceholder.typicode.com/posts') 
+      .then(response => {
+        // Başarılı bir yanıt alındığında çalışır
+        setData(response.data); // API'den gelen veriyi "data" state'ine kaydeder
+        setLoading(false); // Yükleme durumunu kapatır
+      })
+      .catch(error => {
+        // Hata oluştuğunda çalışır
+        console.error('API Hatası:', error); // Konsola hata mesajı yazdırılır
+        setLoading(false); // Yükleme durumunu kapatır (hata durumunda bile)
+      });
+  }, []); // Boş bağımlılık dizisi [] kullanılır, böylece bu efekt yalnızca bileşen ilk yüklendiğinde çalışır.
+
+  // 3. Yükleme Durumu Gösterimi
+  // Eğer "loading" true ise kullanıcıya yükleme mesajı gösterilir.
+  if (loading) {
+    return <Text style={styles.loadingText}>Yükleniyor...</Text>;
+  }
+```
+
+Artık `data` değişkenimizde API’den gelen veriler var."
+
+----------
+
+### **5. Gelen Veriyi Listeleme**
+
+"Peki, API’den gelen bu verileri nasıl göstereceğiz? React Native’de listeleme yapmak için `FlatList` bileşenini kullanıyoruz.
+
+```typescript
+<FlatList
+  data={data} // Gösterilecek veri
+  keyExtractor={(item) => item.id.toString()} // Benzersiz bir anahtar
+  renderItem={({ item }) => (
+    <Text>{item.title}</Text> // Her bir öğeyi gösterme şekli
+  )}
+/>
+```
+
+-   `data`: API’den gelen ve `useState`'e kaydettiğimiz veri.
+-   `keyExtractor`: Her öğeye benzersiz bir anahtar sağlıyor, bu performans için önemli.
+-   `renderItem`: Burada her bir öğenin nasıl görüneceğini tanımlıyoruz. Mesela sadece başlıkları gösteriyoruz."
+
+----------
+
+### **6. Özet**
+
+"Hadi şimdi tüm süreci toparlayalım:
+
+1.  **API Çağrısı:** `axios.get` ile veriyi çekiyoruz.
+2.  **State Kullanımı:** Gelen veriyi `useState` ile saklıyoruz.
+3.  **useEffect:** API çağrısını `useEffect` içine koyuyoruz ki sadece bileşen yüklendiğinde çalışsın.
+4.  **Hata Yönetimi:** Hataları `catch` bloğunda yakalıyoruz.
+5.  **Listeleme:** Gelen veriyi `FlatList` ile kullanıcıya gösteriyoruz.
+
+Ve işte bu kadar! Eğer sorularınız varsa, şimdi alabilirim."
+
+----------
